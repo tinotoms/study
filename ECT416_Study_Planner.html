@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ECT416 — Priority Study Planner</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#f5f5f3;color:#1a1a1a;padding:1.5rem}
+h1{font-size:20px;font-weight:600;margin-bottom:4px}
+.sub{font-size:13px;color:#666;margin-bottom:1.25rem}
+.controls{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1rem}
+select{font-size:13px;padding:6px 10px;border-radius:8px;border:1px solid #ccc;background:#fff;color:#1a1a1a;cursor:pointer}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:1.25rem}
+.stat{background:#fff;border-radius:8px;padding:0.7rem 1rem;border:1px solid #eee}
+.sl{font-size:11px;color:#888;margin-bottom:2px}
+.sv{font-size:22px;font-weight:600}
+.pgwrap{margin-bottom:1.25rem}
+.pglabel{font-size:12px;color:#666;display:flex;justify-content:space-between;margin-bottom:5px}
+.pgtrack{height:6px;background:#e8e8e8;border-radius:3px;overflow:hidden}
+.pgfill{height:100%;background:#1D9E75;border-radius:3px;transition:width 0.3s}
+.sec{font-size:12px;font-weight:600;color:#555;margin:1.1rem 0 0.4rem;padding-bottom:4px;border-bottom:1px solid #e0e0e0;text-transform:uppercase;letter-spacing:0.5px}
+.q-list{display:flex;flex-direction:column;gap:7px}
+.qc{background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:0.85rem 1rem;display:flex;gap:10px;align-items:flex-start;cursor:pointer;transition:background 0.1s}
+.qc:hover{background:#f9f9f7}
+.qc.done{opacity:0.4}
+.qc.done .qt{text-decoration:line-through}
+.pbar{width:4px;border-radius:4px;flex-shrink:0;align-self:stretch;min-height:44px}
+.pm{background:#E24B4A}.ph{background:#BA7517}.pme{background:#378ADD}
+.qbody{flex:1;min-width:0}
+.meta{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:5px}
+.badge{font-size:11px;padding:2px 8px;border-radius:4px;font-weight:600}
+.bm{background:#FCEBEB;color:#791F1F}
+.bh{background:#FAEEDA;color:#633806}
+.bme{background:#E6F1FB;color:#0C447C}
+.bmod{background:#f0f0ee;color:#555}
+.brep{background:#FCEBEB;color:#791F1F}
+.bmk{background:#f0f0ee;color:#555}
+.qt{font-size:13px;line-height:1.55}
+.qy{font-size:11px;color:#aaa;margin-top:4px}
+.chk{width:18px;height:18px;border-radius:50%;border:2px solid #ccc;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;transition:all 0.15s}
+.chk.on{background:#1D9E75;border-color:#1D9E75}
+.cm{width:7px;height:4px;border-left:2px solid white;border-bottom:2px solid white;transform:rotate(-45deg) translateY(-1px);display:none}
+.chk.on .cm{display:block}
+.empty{text-align:center;padding:2rem;color:#888;font-size:13px}
+@media(max-width:600px){.stats{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<h1>ECT416 — Modern Communication Systems</h1>
+<p class="sub">Priority study planner &bull; 75 questions from 3 papers (2023–2025) &bull; Click any question to mark as done</p>
+
+<div class="pgwrap">
+  <div class="pglabel"><span id="ptxt">0 of 75 done</span><span id="ppct">0%</span></div>
+  <div class="pgtrack"><div class="pgfill" id="pbar" style="width:0%"></div></div>
+</div>
+
+<div class="controls">
+  <select id="fp" onchange="render()">
+    <option value="all">All priorities</option>
+    <option value="must">Must study</option>
+    <option value="high">High priority</option>
+    <option value="medium">Medium</option>
+  </select>
+  <select id="fm" onchange="render()">
+    <option value="all">All modules</option>
+    <option value="1">Module 1 — OFDM &amp; channel</option>
+    <option value="2">Module 2 — mmWave &amp; WiFi/6G</option>
+    <option value="3">Module 3 — IoT</option>
+    <option value="4">Module 4 — Vehicular comm.</option>
+    <option value="5">Module 5 — SDR &amp; cognitive radio</option>
+  </select>
+  <select id="fmk" onchange="render()">
+    <option value="all">All marks</option>
+    <option value="3">3-mark questions</option>
+    <option value="7">7/8-mark questions</option>
+  </select>
+  <select id="fd" onchange="render()">
+    <option value="all">Show all</option>
+    <option value="pending">Pending only</option>
+    <option value="done">Done only</option>
+  </select>
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="sl">Must study</div><div class="sv" id="sm" style="color:#A32D2D">0</div></div>
+  <div class="stat"><div class="sl">High priority</div><div class="sv" id="sh" style="color:#854F0B">0</div></div>
+  <div class="stat"><div class="sl">Medium</div><div class="sv" id="sme" style="color:#185FA5">0</div></div>
+  <div class="stat"><div class="sl">Total questions</div><div class="sv" id="stot" style="color:#333">75</div></div>
+</div>
+
+<div class="q-list" id="ql"></div>
+
+<script>
+const Q=[
+{id:1,mod:1,topic:"OFDM architecture",q:"Draw and explain the OFDM architecture showing how OFDM modulation and demodulation works.",marks:7,rep:2,years:"June 2023, Apr 2025"},
+{id:2,mod:1,topic:"SC-FDMA",q:"Draw and explain the SC-FDMA transmitter and receiver structure.",marks:7,rep:2,years:"June 2023, Apr 2025"},
+{id:3,mod:1,topic:"Diversity techniques",q:"Classify the diversity techniques used in wireless communication.",marks:7,rep:2,years:"May 2024, Apr 2025"},
+{id:4,mod:1,topic:"OFDM basics",q:"Explain why OFDM is preferred over FDM in modern communication systems.",marks:3,rep:1,years:"June 2023"},
+{id:5,mod:1,topic:"OFDM basics",q:"Define OFDM and explain its basic principle with a neat diagram.",marks:3,rep:1,years:"Apr 2025"},
+{id:6,mod:1,topic:"Cyclic prefix",q:"What is the cyclic prefix? Why is it used in OFDM?",marks:7,rep:1,years:"May 2024"},
+{id:7,mod:1,topic:"PAPR in OFDM",q:"Explain PAPR in OFDM systems.",marks:7,rep:1,years:"May 2024"},
+{id:8,mod:1,topic:"Multicarrier benefits",q:"What are the benefits of multicarrier transmission? How is orthogonality of subcarriers maintained in OFDM?",marks:7,rep:1,years:"June 2023"},
+{id:9,mod:1,topic:"Multicarrier benefits",q:"List the benefits of a multi-carrier communication system over single carrier.",marks:3,rep:1,years:"May 2024"},
+{id:10,mod:1,topic:"Two-ray model",q:"Explain the two-ray ground reflection model and derive an expression for the total electric field.",marks:7,rep:1,years:"June 2023"},
+{id:11,mod:1,topic:"Doppler shift",q:"Explain how Doppler shift is an important consideration in wireless communication system design.",marks:3,rep:1,years:"June 2023"},
+{id:12,mod:1,topic:"Doppler calculation",q:"Determine the speed of a vehicle approaching an antenna if it experiences a max Doppler shift of 70 Hz at 900 MHz.",marks:7,rep:1,years:"May 2024"},
+{id:13,mod:1,topic:"Fading calculation",q:"A mobile subscriber travels at 60 km/h. Compute the time between fades for a cellphone at 900 MHz and a PCS phone at 1900 MHz.",marks:7,rep:1,years:"Apr 2025"},
+{id:14,mod:1,topic:"OFDM with cyclic prefix",q:"Draw and explain the OFDM architecture with Cyclic Prefix.",marks:7,rep:1,years:"Apr 2025"},
+{id:15,mod:1,topic:"Shadowing",q:"What is shadowing and how can it be modelled in mobile communication?",marks:3,rep:1,years:"May 2024"},
+{id:16,mod:1,topic:"Path loss",q:"Define path loss and mention the factors affecting it.",marks:3,rep:1,years:"Apr 2025"},
+{id:17,mod:2,topic:"IEEE 802.11 standards",q:"Define IEEE 802.11. Write short notes on each of the standards: 802.11a/b/g/n/ac/ax.",marks:7,rep:2,years:"June 2023, Apr 2025"},
+{id:18,mod:2,topic:"HiperLAN",q:"Explain HiperLAN technology and differentiate between HiperLAN Type 1 and Type 2.",marks:7,rep:2,years:"June 2023, May 2024"},
+{id:19,mod:2,topic:"IEEE 802.15 WPAN",q:"Compare the characteristics of IEEE 802.15.1, IEEE 802.15.3, and IEEE 802.15.4 WPAN standards.",marks:7,rep:2,years:"May 2024, Apr 2025"},
+{id:20,mod:2,topic:"mmWave communication",q:"Explain millimetre wave communication and mention its advantages.",marks:3,rep:2,years:"June 2023, Apr 2025"},
+{id:21,mod:2,topic:"mmWave characteristics",q:"List and explain any three characteristics of millimeter waves.",marks:3,rep:2,years:"May 2024, Apr 2025"},
+{id:22,mod:2,topic:"60 GHz communication",q:"What are the potential applications for 60 GHz wireless communication? Mention the challenges in real-world scenarios.",marks:8,rep:1,years:"June 2023"},
+{id:23,mod:2,topic:"mmWave applications",q:"Explain three indoor and outdoor applications of millimeter wave communication.",marks:6,rep:1,years:"June 2023"},
+{id:24,mod:2,topic:"WiMAX",q:"Explain the architecture and working of WiMAX (IEEE 802.16a) technology.",marks:8,rep:1,years:"Apr 2025"},
+{id:25,mod:2,topic:"IEEE 802.11 WLAN",q:"Explain the IEEE 802.11 standard for WLAN. Compare features of various derivatives.",marks:7,rep:1,years:"May 2024"},
+{id:26,mod:2,topic:"Friis equation",q:"Using Friis free space equation, compare path loss at 500m for carrier frequencies 1.8 GHz and 2.4 GHz.",marks:7,rep:1,years:"May 2024"},
+{id:27,mod:2,topic:"6G use cases",q:"Mention three 6G use cases and their technologies.",marks:3,rep:1,years:"June 2023"},
+{id:28,mod:2,topic:"6G networks",q:"Discuss the major advantages and limitations of 6G Networks.",marks:3,rep:1,years:"May 2024"},
+{id:29,mod:2,topic:"6G applications",q:"Detail the applications and purposes of 6G technology.",marks:6,rep:1,years:"Apr 2025"},
+{id:30,mod:2,topic:"3GPP-LTE",q:"Explain 3GPP–LTE standard.",marks:3,rep:1,years:"Apr 2025"},
+{id:31,mod:3,topic:"Healthcare IoT architecture",q:"Describe the architecture of a healthcare IoT system with the help of a diagram.",marks:7,rep:3,years:"June 2023, May 2024, Apr 2025"},
+{id:32,mod:3,topic:"Cloud computing models",q:"Explain cloud computing. What are the service models and deployment models in cloud computing?",marks:7,rep:2,years:"May 2024, Apr 2025"},
+{id:33,mod:3,topic:"IoT physical design",q:"What is the physical design of an IoT system and what are its key components? Explain with a diagram.",marks:7,rep:2,years:"June 2023, Apr 2025"},
+{id:34,mod:3,topic:"MQTT vs CoAP",q:"Differentiate between MQTT and CoAP protocols in IoT.",marks:3,rep:2,years:"June 2023, May 2024"},
+{id:35,mod:3,topic:"MQTT vs CoAP (detailed)",q:"Distinguish between MQTT and CoAP communication protocols used in IoT systems (detailed).",marks:7,rep:1,years:"May 2024"},
+{id:36,mod:3,topic:"IPv6 & 6LoWPAN",q:"Describe the infrastructure protocols IPv6 and 6LoWPAN. Also explain the difference between the two.",marks:7,rep:1,years:"June 2023"},
+{id:37,mod:3,topic:"Vehicular IoT architecture",q:"With an appropriate diagram, describe the architecture of the Vehicular IoT system.",marks:7,rep:1,years:"May 2024"},
+{id:38,mod:3,topic:"MQTT protocol",q:"Explain the principle of operation of MQTT data protocol employed in IoT networks.",marks:7,rep:1,years:"Apr 2025"},
+{id:39,mod:3,topic:"IoT enabling technologies",q:"Explain the key enabling technologies that make IoT possible. How does cloud computing enable IoT devices to store and process data?",marks:6,rep:1,years:"June 2023"},
+{id:40,mod:3,topic:"Zigbee vs Wireless HART",q:"Compare the IoT connectivity technologies Zigbee and Wireless HART.",marks:3,rep:1,years:"June 2023"},
+{id:41,mod:3,topic:"IPv6 characteristics",q:"List and explain any three characteristics of IPv6.",marks:3,rep:1,years:"May 2024"},
+{id:42,mod:3,topic:"IoT request-response",q:"Explain the request-response communication model used in IoT systems.",marks:3,rep:1,years:"May 2024"},
+{id:43,mod:3,topic:"IoT definition",q:"Define the Internet of Things (IoT) and explain any two of its key characteristics.",marks:3,rep:1,years:"Apr 2025"},
+{id:44,mod:3,topic:"Active vs passive RFID",q:"What is the difference between active and passive RFID?",marks:3,rep:1,years:"Apr 2025"},
+{id:45,mod:4,topic:"CAV architecture in 6G",q:"Explain the architecture of connected autonomous vehicles (CAV) in 6G with the help of a diagram.",marks:7,rep:2,years:"June 2023, Apr 2025"},
+{id:46,mod:4,topic:"Collision avoidance",q:"Describe how collision avoidance can be achieved through vehicular communication.",marks:7,rep:3,years:"June 2023, May 2024, Apr 2025"},
+{id:47,mod:4,topic:"DSRC limitations",q:"What are some potential drawbacks or limitations of DSRC?",marks:3,rep:1,years:"June 2023"},
+{id:48,mod:4,topic:"DSRC standards",q:"Explain the DSRC standards for vehicular communication.",marks:3,rep:1,years:"May 2024"},
+{id:49,mod:4,topic:"DSRC in vehicular networks",q:"Discuss Dedicated Short-Range Communication (DSRC) in vehicular networks. List its advantages and disadvantages.",marks:7,rep:1,years:"Apr 2025"},
+{id:50,mod:4,topic:"IEEE 802.11p",q:"Explain what is IEEE 802.11p and how does it differ from other IEEE 802.11 wireless communication standards?",marks:7,rep:1,years:"June 2023"},
+{id:51,mod:4,topic:"IEEE 802.11p vs cellular",q:"Explain the main advantages and limitations of IEEE 802.11p standard compared to cellular communication in CAVs.",marks:7,rep:1,years:"May 2024"},
+{id:52,mod:4,topic:"VLC in vehicular comm.",q:"What is Visible Light Communication (VLC)? Explain various applications of VLC technology in vehicular communication.",marks:7,rep:1,years:"June 2023"},
+{id:53,mod:4,topic:"VLC-based ITS architecture",q:"With the help of necessary figures, explain the architecture of ITS system utilizing VLC standard for V2X communication.",marks:7,rep:1,years:"May 2024"},
+{id:54,mod:4,topic:"CAV components in 6G",q:"Explain the key components of connected autonomous vehicles in 6G communications with the help of a diagram.",marks:7,rep:1,years:"May 2024"},
+{id:55,mod:4,topic:"IEEE 1609 standard",q:"Explain the IEEE 1609 standard and its sub-variants used in vehicular communication.",marks:7,rep:1,years:"Apr 2025"},
+{id:56,mod:4,topic:"WAVE challenges",q:"List the major application areas and challenges of WAVE.",marks:3,rep:2,years:"May 2024, Apr 2025"},
+{id:57,mod:4,topic:"ITS overview",q:"What is the Intelligent Transport System (ITS) and how does it revolutionize transportation?",marks:3,rep:1,years:"Apr 2025"},
+{id:58,mod:4,topic:"VLC advantages",q:"Mention the advantages of VLC standard in vehicular communication.",marks:3,rep:1,years:"June 2023"},
+{id:59,mod:4,topic:"CAV benefits",q:"What are the benefits of CAVs? Describe how collision avoidance can be achieved through vehicular communication.",marks:7,rep:1,years:"June 2023"},
+{id:60,mod:5,topic:"Spectrum sharing & subleasing",q:"Describe spectrum subleasing and sharing in cognitive radio.",marks:7,rep:3,years:"June 2023, May 2024, Apr 2025"},
+{id:61,mod:5,topic:"SDR receiver specifications",q:"What are the specifications of a receiver in SDR?",marks:3,rep:2,years:"June 2023, Apr 2025"},
+{id:62,mod:5,topic:"SDR architecture",q:"Discuss the architecture of SDR with a suitable block diagram.",marks:7,rep:2,years:"June 2023, Apr 2025"},
+{id:63,mod:5,topic:"Cognitive radio features",q:"What are the key features and benefits of cognitive radio technology? How does spectrum subleasing work in cognitive radio networks?",marks:7,rep:2,years:"June 2023, Apr 2025"},
+{id:64,mod:5,topic:"Cognitive radio definition",q:"Define cognitive radio and explain its significance.",marks:3,rep:2,years:"May 2024, Apr 2025"},
+{id:65,mod:5,topic:"SDR applications",q:"What are some common applications of SDR systems, and how does SDR enable greater flexibility in communication systems?",marks:7,rep:1,years:"June 2023"},
+{id:66,mod:5,topic:"Cognitive radio & spectrum sharing",q:"Explain the concept of cognitive radio. What are the benefits of spectrum sharing in cognitive radio?",marks:7,rep:1,years:"June 2023"},
+{id:67,mod:5,topic:"Software radio architecture",q:"How does a software radio architecture work, and what are its components?",marks:7,rep:1,years:"June 2023"},
+{id:68,mod:5,topic:"SDR transmitter & receiver specs",q:"List and explain the main specifications for SDR transmitter and receiver.",marks:7,rep:1,years:"May 2024"},
+{id:69,mod:5,topic:"Low-IF receiver for SDR",q:"With a necessary diagram, explain the low IF receiver architecture for SDR.",marks:7,rep:1,years:"May 2024"},
+{id:70,mod:5,topic:"Zero-IF receiver issues",q:"Explain the issues with zero IF receiver architecture for Software Defined Radio.",marks:3,rep:1,years:"May 2024"},
+{id:71,mod:5,topic:"Software adaptable networks",q:"Discuss the functions of software adaptable networks (SAN) in cognitive networks.",marks:7,rep:1,years:"May 2024"},
+{id:72,mod:5,topic:"SDR components",q:"What are the basic components of an SDR system?",marks:3,rep:1,years:"June 2023"},
+{id:73,mod:5,topic:"Direct conversion SDR",q:"List and explain the advantages and disadvantages of direct conversion architectures for SDR receiver.",marks:7,rep:1,years:"Apr 2025"},
+{id:74,mod:5,topic:"Multiple conversion SDR",q:"Briefly explain the Multiple conversion receiver architecture for SDR.",marks:7,rep:1,years:"Apr 2025"},
+{id:75,mod:5,topic:"Cognitive radio benefits",q:"Define cognitive radio and list out its benefits.",marks:3,rep:1,years:"Apr 2025"},
+];
+
+function pri(q){
+  if(q.rep>=3) return 'must';
+  if(q.rep===2 && q.marks>=7) return 'must';
+  if(q.rep===2 && q.marks===3) return 'high';
+  if(q.rep===1 && q.marks>=7) return 'high';
+  return 'medium';
+}
+
+const done = new Set();
+const pord = {must:0,high:1,medium:2};
+const plabel = {must:'Must study',high:'High priority',medium:'Medium'};
+const pbc = {must:'bm',high:'bh',medium:'bme'};
+const pbarcl = {must:'pm',high:'ph',medium:'pme'};
+const mnames = {1:'Mod 1',2:'Mod 2',3:'Mod 3',4:'Mod 4',5:'Mod 5'};
+
+function render(){
+  const fp=document.getElementById('fp').value;
+  const fm=document.getElementById('fm').value;
+  const fmk=document.getElementById('fmk').value;
+  const fd=document.getElementById('fd').value;
+
+  let qs=Q.map(q=>({...q,priority:pri(q)}));
+
+  const c={must:0,high:0,medium:0};
+  qs.forEach(q=>c[q.priority]++);
+  document.getElementById('sm').textContent=c.must;
+  document.getElementById('sh').textContent=c.high;
+  document.getElementById('sme').textContent=c.medium;
+
+  const dn=done.size;
+  document.getElementById('ptxt').textContent=dn+' of '+Q.length+' done';
+  document.getElementById('ppct').textContent=Math.round(dn/Q.length*100)+'%';
+  document.getElementById('pbar').style.width=Math.round(dn/Q.length*100)+'%';
+
+  qs.sort((a,b)=>pord[a.priority]-pord[b.priority]||b.rep-a.rep||b.marks-a.marks);
+
+  if(fp!=='all') qs=qs.filter(q=>q.priority===fp);
+  if(fm!=='all') qs=qs.filter(q=>q.mod===parseInt(fm));
+  if(fmk!=='all') qs=qs.filter(q=>fmk==='3'?q.marks===3:q.marks>=6);
+  if(fd==='pending') qs=qs.filter(q=>!done.has(q.id));
+  if(fd==='done') qs=qs.filter(q=>done.has(q.id));
+
+  let html='';let lastP=null;
+  qs.forEach(q=>{
+    if(q.priority!==lastP){html+='<div class="sec">'+plabel[q.priority]+'</div>';lastP=q.priority;}
+    const d=done.has(q.id);
+    const rb=q.rep>=2?'<span class="badge brep">repeated x'+q.rep+'</span>':'';
+    html+=`<div class="qc ${d?'done':''}" onclick="tog(${q.id})">
+      <div class="chk ${d?'on':''}"><div class="cm"></div></div>
+      <div class="pbar ${pbarcl[q.priority]}"></div>
+      <div class="qbody">
+        <div class="meta">
+          <span class="badge ${pbc[q.priority]}">${plabel[q.priority]}</span>
+          <span class="badge bmod">${mnames[q.mod]} &bull; ${q.topic}</span>
+          <span class="badge bmk">${q.marks} marks</span>
+          ${rb}
+        </div>
+        <p class="qt">${q.q}</p>
+        <p class="qy">Asked in: ${q.years}</p>
+      </div>
+    </div>`;
+  });
+
+  if(!qs.length) html='<div class="empty">No questions match the current filters.</div>';
+  document.getElementById('ql').innerHTML=html;
+}
+
+function tog(id){
+  done.has(id)?done.delete(id):done.add(id);
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
