@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ECT402 — Wireless Communication Priority Study Planner</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#f5f5f3;color:#1a1a1a;padding:1.5rem}
+h1{font-size:20px;font-weight:600;margin-bottom:4px}
+.sub{font-size:13px;color:#666;margin-bottom:1.25rem}
+.controls{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1rem}
+select{font-size:13px;padding:6px 10px;border-radius:8px;border:1px solid #ccc;background:#fff;color:#1a1a1a;cursor:pointer}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:1.25rem}
+.stat{background:#fff;border-radius:8px;padding:0.7rem 1rem;border:1px solid #eee}
+.sl{font-size:11px;color:#888;margin-bottom:2px}
+.sv{font-size:22px;font-weight:600}
+.pgwrap{margin-bottom:1.25rem}
+.pglabel{font-size:12px;color:#666;display:flex;justify-content:space-between;margin-bottom:5px}
+.pgtrack{height:6px;background:#e8e8e8;border-radius:3px;overflow:hidden}
+.pgfill{height:100%;background:#1D9E75;border-radius:3px;transition:width 0.3s}
+.sec{font-size:12px;font-weight:600;color:#555;margin:1.1rem 0 0.4rem;padding-bottom:4px;border-bottom:1px solid #e0e0e0;text-transform:uppercase;letter-spacing:0.5px}
+.q-list{display:flex;flex-direction:column;gap:7px}
+.qc{background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:0.85rem 1rem;display:flex;gap:10px;align-items:flex-start;cursor:pointer;transition:background 0.1s}
+.qc:hover{background:#f9f9f7}
+.qc.done{opacity:0.4}
+.qc.done .qt{text-decoration:line-through}
+.pbar{width:4px;border-radius:4px;flex-shrink:0;align-self:stretch;min-height:44px}
+.pm{background:#E24B4A}.ph{background:#BA7517}.pme{background:#378ADD}
+.qbody{flex:1;min-width:0}
+.meta{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:5px}
+.badge{font-size:11px;padding:2px 8px;border-radius:4px;font-weight:600}
+.bm{background:#FCEBEB;color:#791F1F}
+.bh{background:#FAEEDA;color:#633806}
+.bme{background:#E6F1FB;color:#0C447C}
+.bmod{background:#f0f0ee;color:#555}
+.brep{background:#FCEBEB;color:#791F1F}
+.bmk{background:#f0f0ee;color:#555}
+.qt{font-size:13px;line-height:1.55}
+.qy{font-size:11px;color:#aaa;margin-top:4px}
+.chk{width:18px;height:18px;border-radius:50%;border:2px solid #ccc;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;transition:all 0.15s}
+.chk.on{background:#1D9E75;border-color:#1D9E75}
+.cm{width:7px;height:4px;border-left:2px solid white;border-bottom:2px solid white;transform:rotate(-45deg) translateY(-1px);display:none}
+.chk.on .cm{display:block}
+.empty{text-align:center;padding:2rem;color:#888;font-size:13px}
+@media(max-width:600px){.stats{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<h1>ECT402 — Wireless Communication</h1>
+<p class="sub" id="subtxt">Priority study planner • loading questions...</p>
+
+<div class="pgwrap">
+  <div class="pglabel"><span id="ptxt">0 of 0 done</span><span id="ppct">0%</span></div>
+  <div class="pgtrack"><div class="pgfill" id="pbar" style="width:0%"></div></div>
+</div>
+
+<div class="controls">
+  <select id="fp" onchange="render()">
+    <option value="all">All priorities</option>
+    <option value="must">Must study</option>
+    <option value="high">High priority</option>
+    <option value="medium">Medium</option>
+  </select>
+  <select id="fm" onchange="render()">
+    <option value="all">All modules</option>
+    <option value="1">Module 1 — Cellular Concepts &amp; WLAN</option>
+    <option value="2">Module 2 — Wireless Channel &amp; Fading</option>
+    <option value="3">Module 3 — OFDM &amp; Multicarrier</option>
+    <option value="4">Module 4 — Equalization &amp; Multiple Access</option>
+    <option value="5">Module 5 — Radio Wave Propagation</option>
+  </select>
+  <select id="fmk" onchange="render()">
+    <option value="all">All marks</option>
+    <option value="3">3-mark questions</option>
+    <option value="7">7+ mark questions</option>
+  </select>
+  <select id="fd" onchange="render()">
+    <option value="all">Show all</option>
+    <option value="pending">Pending only</option>
+    <option value="done">Done only</option>
+  </select>
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="sl">Must study</div><div class="sv" id="sm" style="color:#A32D2D">0</div></div>
+  <div class="stat"><div class="sl">High priority</div><div class="sv" id="sh" style="color:#854F0B">0</div></div>
+  <div class="stat"><div class="sl">Medium</div><div class="sv" id="sme" style="color:#185FA5">0</div></div>
+  <div class="stat"><div class="sl">Total questions</div><div class="sv" id="stot" style="color:#333">0</div></div>
+</div>
+
+<div class="q-list" id="ql"></div>
+
+<script>
+const RAW = [
+  {m:1, q:"Define Grade Of Service (GOS) and Trunking.", topic:"Trunking & GOS", marks:3, years:["Jun 2023"]},
+  {m:1, q:"What are the standards used for implementing Wireless Personal Area Network (WPAN)?", topic:"WPAN Standards", marks:3, years:["Jun 2023"]},
+  {m:1, q:"Compare and contrast the analog and digital cellular systems.", topic:"Cellular Systems", marks:3, years:["Oct 2023"]},
+  {m:1, q:"What are the methods adopted for hand-off procedures?", topic:"Handoff", marks:3, years:["Oct 2023"]},
+  {m:1, q:"What is meant by frequency reuse in a cellular system?", topic:"Frequency Reuse", marks:3, years:["May 2024"]},
+  {m:1, q:"What are the different types of interferences in Cellular system? Explain.", topic:"Interference", marks:3, years:["May 2024"]},
+  {m:1, q:"Determine the number of channels per cluster and the total channel capacity for a cellular telephone area composed of 10 clusters with seven cells in each cluster and 10 channels in each cell.", topic:"Channel Capacity", marks:3, years:["Aug 2024"]},
+  {m:1, q:"What is cell splitting? How does it improve system performance?", topic:"Cell Splitting", marks:3, years:["Aug 2024"]},
+  {m:1, q:"Draw the architecture of WiMAX.", topic:"WiMAX", marks:3, years:["Apr 2025"]},
+  {m:1, q:"If a total of 33 MHz of bandwidth is allocated to a particular FDD cellular telephone system which uses two 25kHz simplex channels to provide full duplex voice and control channels, compute the number of channels available per cell if a system uses (a) 4-cell reuse, (b) 7-cell reuse.", topic:"Channel Calculation", marks:3, years:["Apr 2025"]},
+  {m:1, q:"List the different types of Wireless LAN topologies.", topic:"WLAN Topologies", marks:3, years:["Sep 2025"]},
+  {m:1, q:"Describe the different types of handoff schemes used in cellular networks?", topic:"Handoff", marks:3, years:["Sep 2025"]},
+  {m:1, q:"What are different standards used to implement the Wireless Local Area Network (WLAN)? Explain by comparing.", topic:"WLAN Standards", marks:7, years:["Jun 2023"]},
+  {m:1, q:"If a Signal to Interference Ratio (SIR) of 20dB is required for satisfactory forward channel performance of a cellular system, what is the frequency reuse factor and cluster size that should be used for maximum capacity? Path loss exponent n=4, 12 co-channel cells in first tier.", topic:"SIR & Cluster Size", marks:7, years:["Jun 2023"]},
+  {m:1, q:"Enumerate the different features of a 4G mobile communication system.", topic:"4G Features", marks:7, years:["Jun 2023","Oct 2023"]},
+  {m:1, q:"How do co-channel interference and adjacent channel interference affect cellular system capacity?", topic:"Interference & Capacity", marks:7, years:["Jun 2023","Oct 2023"]},
+  {m:1, q:"Describe the features of the GSM system architecture with the help of a neat block diagram.", topic:"GSM Architecture", marks:7, years:["Oct 2023"]},
+  {m:1, q:"How does cell splitting and sectoring improve the capacity and coverage of the cellular system?", topic:"Cell Splitting & Sectoring", marks:7, years:["Oct 2023","Apr 2025"]},
+  {m:1, q:"Explain the different channel assignment strategies used in cellular system.", topic:"Channel Assignment", marks:7, years:["Oct 2023"]},
+  {m:1, q:"Enumerate the features of 4G wireless network.", topic:"4G Features", marks:7, years:["Oct 2023"]},
+  {m:1, q:"Name any two methods to improve capacity in a cellular system. Explain the features with diagrams.", topic:"Capacity Improvement", marks:8, years:["May 2024"]},
+  {m:1, q:"Define trunking and grade of service with relevant formulae.", topic:"Trunking & GOS", marks:6, years:["May 2024"]},
+  {m:1, q:"Compare the important features of 1G, 2G, 3G and 4G systems.", topic:"Cellular Generations", marks:10, years:["May 2024"]},
+  {m:1, q:"In a cellular system using a 4-cell reuse pattern with a total bandwidth of 60MHz, if 2 channels of 30 kHz each are needed for a call, how many simultaneous calls can be accommodated in one cell and in one cluster?", topic:"Channel Calculation", marks:4, years:["May 2024"]},
+  {m:1, q:"Describe the evolution of wireless communication systems through the generations (2G, 3G, 4G, and 5G). List out the key technological advancements and capabilities introduced in each generation.", topic:"Cellular Generations", marks:7, years:["Aug 2024"]},
+  {m:1, q:"Describe the role of Bluetooth technology in the development of personal area networks. What are the main features that distinguish Bluetooth from other wireless technologies?", topic:"Bluetooth / PAN", marks:7, years:["Aug 2024"]},
+  {m:1, q:"Describe different types of handoff techniques. How do these techniques address the challenges associated with maintaining seamless connectivity during mobility?", topic:"Handoff", marks:8, years:["Aug 2024"]},
+  {m:1, q:"A cellular service provider uses a digital TDMA scheme with a worst case tolerance of 23dB SIR. Calculate the optimal value of cluster size N and frequency reuse factor Q for maximum capacity for omnidirectional antennas. (6 co-channel cells, path loss exponent n=4.)", topic:"SIR & Cluster Size", marks:6, years:["Aug 2024"]},
+  {m:1, q:"How is co-channel signal to interference ratio, cluster size and system capacity related to one another in cellular system? Explain with necessary equation.", topic:"SIR & Cluster Size", marks:7, years:["Apr 2025"]},
+  {m:1, q:"With necessary diagram explain WLAN Architecture.", topic:"WLAN Standards", marks:7, years:["Apr 2025"]},
+  {m:1, q:"Enumerate the different features of 2G, 3G and 4G mobile communication system.", topic:"Cellular Generations", marks:7, years:["Apr 2025"]},
+  {m:1, q:"Explain the concept of soft handoff and hard handoff in cellular networks. How do they differ and what are their advantages and disadvantages?", topic:"Handoff", marks:7, years:["Sep 2025"]},
+  {m:1, q:"If a cellular system supports 150 simultaneous calls per cell and each call requires 24 kbps, determine the bandwidth needed for a 4-cell cluster.", topic:"Channel Calculation", marks:7, years:["Sep 2025"]},
+  {m:1, q:"Compare and contrast the important performance features of 4G and 5G wireless communication systems.", topic:"Cellular Generations", marks:7, years:["Sep 2025"]},
+  {m:1, q:"Explain the techniques that can be used to improve the capacity of a cellular system.", topic:"Capacity Improvement", marks:7, years:["Sep 2025"]},
+
+  {m:2, q:"Find the Fraunhofer distance for an antenna with maximum dimension of 1 meter and operating frequency of 900MHz. What is the significance of Fraunhofer distance?", topic:"Fraunhofer Distance", marks:3, years:["Jun 2023","Apr 2025"]},
+  {m:2, q:"What is meant by coherence bandwidth of the channel? Define coherence bandwidth in terms of rms delay spread.", topic:"Coherence Bandwidth", marks:3, years:["Jun 2023"]},
+  {m:2, q:"How does fading occur? Derive the expression for Doppler shift.", topic:"Fading & Doppler Shift", marks:3, years:["Oct 2023"]},
+  {m:2, q:"Assume a receiver is located 10km away from a 50W transmitter. Given f=900MHz, Gt=1 and Gr=2. Find the power at receiver and RMS voltage at receiver antenna matched with 50Ω resistor.", topic:"Free Space Path Loss", marks:3, years:["Oct 2023"]},
+  {m:2, q:"How does multipath propagation cause small scale fading?", topic:"Small Scale Fading", marks:3, years:["May 2024"]},
+  {m:2, q:"Define Ergodic capacity in the context of wireless communication systems and explain its significance.", topic:"Ergodic Capacity", marks:3, years:["May 2024"]},
+  {m:2, q:"What is fading? List various types of small scale fading.", topic:"Small Scale Fading", marks:3, years:["Aug 2024"]},
+  {m:2, q:"A transmitter radiates a sinusoidal carrier frequency of 3GHz. For a vehicle moving at a speed of 72Kmph, compute the received frequency if the mobile is moving (i) directly towards the transmitter (ii) directly away from the transmitter.", topic:"Doppler Frequency", marks:3, years:["Oct 2023","Aug 2024"]},
+  {m:2, q:"What is frequency selective fading? Explain.", topic:"Frequency Selective Fading", marks:3, years:["Apr 2025"]},
+  {m:2, q:"What is Fraunhofer distance? What is its significance?", topic:"Fraunhofer Distance", marks:3, years:["Apr 2025"]},
+  {m:2, q:"Differentiate between flat fading and frequency selective fading?", topic:"Fading Types", marks:3, years:["Sep 2025"]},
+  {m:2, q:"Explain how Doppler spread affects wireless communication performance parameters.", topic:"Doppler Spread", marks:3, years:["Sep 2025"]},
+
+  {m:2, q:"What is the importance of Two Ray model? Derive the expression for path loss in a two ray ground reflection model.", topic:"Two Ray Ground Model", marks:8, years:["Jun 2023","Aug 2024","Apr 2025"]},
+  {m:2, q:"A transmitter radiates a sinusoidal carrier frequency of 3GHz. For a vehicle moving at 72Kmph, compute the received frequency if the mobile is moving (i) directly towards the transmitter (ii) directly away from the transmitter. [14-mark version]", topic:"Doppler Frequency", marks:6, years:["Jun 2023"]},
+  {m:2, q:"What is Fading? What are different types? What are the main factors affecting fading?", topic:"Fading Types", marks:9, years:["Jun 2023"]},
+  {m:2, q:"Calculate the coherence time of a channel, if doppler shift is produced due to the movement of a mobile with a velocity of 50 m/sec and operating at 1900MHz.", topic:"Coherence Time", marks:5, years:["Jun 2023","Apr 2025"]},
+  {m:2, q:"Consider a wireless channel, where power falloff with distance follows the formula P(d)=P(d0/d)^3 for d0=50m. Channel bandwidth B=50KHz and AWGN with N0=10^-9 W/Hz. For transmit power of 2W, find the channel capacity for distances of 200m and 1KM.", topic:"Channel Capacity / Shannon", marks:7, years:["Oct 2023"]},
+  {m:2, q:"Derive the expression for the impulse response model of a multipath channel.", topic:"Multipath Channel Model", marks:7, years:["Oct 2023","Aug 2024"]},
+  {m:2, q:"What is the received power in dBm for a free space signal whose transmit power is 1W and carrier frequency is 2.4GHz, if the receiver is at a distance of 1 mile (1.6km). What is the path loss in dB?", topic:"Free Space Path Loss", marks:7, years:["Oct 2023"]},
+  {m:2, q:"What is inferred by the channel capacity of AWGN channel?", topic:"AWGN Channel Capacity", marks:4, years:["Oct 2023"]},
+  {m:2, q:"What is meant by time selective Fading?", topic:"Time Selective Fading", marks:3, years:["Oct 2023"]},
+  {m:2, q:"Define small scale fading. What are the main types of small scale fading? Differentiate between flat fading and frequency selective fading.", topic:"Small Scale Fading", marks:6, years:["May 2024"]},
+  {m:2, q:"A communication link using half wave length antenna for maximum directive gain. Transmitter power is 2KW, distance 200km, frequency 150MHz, gain=1.64. Find maximum received power.", topic:"Friis Transmission", marks:8, years:["May 2024"]},
+  {m:2, q:"With neat figure derive the expression for path loss in a Two-ray ground model.", topic:"Two Ray Ground Model", marks:8, years:["May 2024"]},
+  {m:2, q:"A wireless channel has channel bandwidth B=320kHz and AWGN with noise PSD N0/2. It is required to obtain a data rate of 1.6Mbps. Calculate the minimum value of SNR required.", topic:"Shannon Capacity", marks:6, years:["May 2024"]},
+  {m:2, q:"Describe the concept of ergodic capacity in flat fading channels. Give the expression for capacity of flat fading AWGN channel with CSIR.", topic:"Ergodic Capacity", marks:7, years:["Aug 2024"]},
+  {m:2, q:"Compare and contrast flat fading with frequency-selective fading in wireless communication channels.", topic:"Fading Types", marks:4, years:["Aug 2024"]},
+  {m:2, q:"Calculate the coherence time of a channel, if doppler shift is produced due to movement of a mobile with a velocity of 50 m/sec and operating at 1800MHz.", topic:"Coherence Time", marks:3, years:["Aug 2024"]},
+  {m:2, q:"With necessary equation and diagram explain capacity of flat fading channel.", topic:"Flat Fading Capacity", marks:10, years:["Apr 2025"]},
+  {m:2, q:"Calculate the coherence time of a channel, if doppler shift is produced due to movement of a mobile with a velocity of 50m/sec and operating at 1900MHz. [Apr 2025]", topic:"Coherence Time", marks:4, years:["Apr 2025"]},
+  {m:2, q:"Explain fading effect due to delay spread.", topic:"Delay Spread", marks:4, years:["Apr 2025"]},
+  {m:2, q:"Describe the different types of fading in a wireless system. How do they impact signal reception?", topic:"Fading Types", marks:7, years:["Sep 2025"]},
+  {m:2, q:"A wireless signal has a Doppler shift of 150 Hz when moving at 60 km/h. Determine the original frequency of the signal.", topic:"Doppler Frequency", marks:7, years:["Sep 2025"]},
+  {m:2, q:"Discuss the impact of shadowing on wireless channel performance.", topic:"Shadowing", marks:7, years:["Sep 2025"]},
+  {m:2, q:"Define the Shannon capacity theorem in the context of wireless communication. How does it set the upper limit for data transmission in a given channel?", topic:"Shannon Capacity", marks:7, years:["Sep 2025"]},
+
+  {m:3, q:"What is the total bandwidth required for multi carrier modulation implementation with non-overlapping subchannels?", topic:"Multicarrier Bandwidth", marks:3, years:["Jun 2023"]},
+  {m:3, q:"What is Peak-to-Average Power-Ratio (PAPR) in OFDM system? How can it be reduced?", topic:"PAPR in OFDM", marks:3, years:["Jun 2023","May 2024","Aug 2024"]},
+  {m:3, q:"How is the outage probability computed for a wireless channel?", topic:"Outage Probability", marks:3, years:["Oct 2023"]},
+  {m:3, q:"Explain the significance of using cyclic prefix in an OFDM System.", topic:"Cyclic Prefix", marks:3, years:["Oct 2023"]},
+  {m:3, q:"Name the multicarrier modulation scheme which completely eliminates the issues due to ISI. What is the principle/technique applied?", topic:"ISI in OFDM / Cyclic Prefix", marks:3, years:["May 2024"]},
+  {m:3, q:"Write the expression for bit error probability in BPSK. Name the terms involved.", topic:"BPSK Error Probability", marks:3, years:["May 2024"]},
+  {m:3, q:"Describe cyclic prefix. Why is cyclic prefix required in OFDM?", topic:"Cyclic Prefix", marks:3, years:["Aug 2024"]},
+  {m:3, q:"Define average error probability and outage probability.", topic:"Error & Outage Probability", marks:3, years:["Aug 2024"]},
+  {m:3, q:"What is frequency selective fading? Explain. [Module 3 context]", topic:"Frequency Selective Fading", marks:3, years:["Apr 2025"]},
+  {m:3, q:"Draw the structure of multicarrier modulation system.", topic:"Multicarrier Modulation", marks:3, years:["Apr 2025"]},
+  {m:3, q:"Analyse the different factors that affect the performance of OFDM systems?", topic:"OFDM Performance Factors", marks:3, years:["Sep 2025"]},
+  {m:3, q:"Discuss the advantages and disadvantages of multicarrier modulation?", topic:"Multicarrier Modulation", marks:3, years:["Sep 2025"]},
+
+  {m:3, q:"Derive expression for average probability of error in BPSK under Rayleigh flat fading, when the symbol duration is roughly equal to channel coherence time.", topic:"BPSK Error Probability", marks:8, years:["Jun 2023","Aug 2024"]},
+  {m:3, q:"How can the subcarrier fading be mitigated in multicarrier modulation system?", topic:"Subcarrier Fading Mitigation", marks:6, years:["Jun 2023","Oct 2023"]},
+  {m:3, q:"With the help of neat block diagram explain Multicarrier modulation in OFDM transmitter and receiver section.", topic:"OFDM Block Diagram", marks:9, years:["Jun 2023","Apr 2025"]},
+  {m:3, q:"List out the advantages and disadvantages of OFDM.", topic:"OFDM Advantages/Disadvantages", marks:5, years:["Jun 2023"]},
+  {m:3, q:"With the help of mathematical equations show how linear convolution is converted to circular convolution in OFDM using Cyclic prefix.", topic:"Cyclic Prefix / Convolution", marks:7, years:["Oct 2023"]},
+  {m:3, q:"Determine the average SNR per bit of BPSK modulation in Rayleigh slow fading channel such that 90% of the times, the average probability of bit error is less than 10^-4.", topic:"BPSK SNR Calculation", marks:7, years:["Oct 2023"]},
+  {m:3, q:"How can the subcarrier fading be mitigated in multicarrier modulation system? [Part B version]", topic:"Subcarrier Fading Mitigation", marks:7, years:["Oct 2023"]},
+  {m:3, q:"Explain the techniques employed to reduce PAPR in OFDM.", topic:"PAPR Reduction", marks:7, years:["Oct 2023","Apr 2025"]},
+  {m:3, q:"What is Orthogonal Frequency Division Multiplexing? Explain the working of OFDM system with necessary block diagrams.", topic:"OFDM Block Diagram", marks:10, years:["May 2024"]},
+  {m:3, q:"What are the applications of OFDM?", topic:"OFDM Applications", marks:4, years:["May 2024"]},
+  {m:3, q:"Derive the expression for outage probability of a BPSK in flat fading channels. How is this related to Fade margin?", topic:"Outage Probability", marks:8, years:["May 2024"]},
+  {m:3, q:"Determine the average SNR per bit of BPSK modulation in Rayleigh slow-fading channel such that 95% of the times, average probability of bit error is less than 10^-4.", topic:"BPSK SNR Calculation", marks:6, years:["Aug 2024"]},
+  {m:3, q:"With the help of block diagrams, explain the implementation of an OFDM system.", topic:"OFDM Block Diagram", marks:9, years:["Aug 2024"]},
+  {m:3, q:"Explain diversity and different diversity techniques.", topic:"Diversity Techniques", marks:9, years:["Apr 2025"]},
+  {m:3, q:"Explain the technique employed to reduce PAPR in OFDM.", topic:"PAPR Reduction", marks:5, years:["Apr 2025"]},
+  {m:3, q:"Derive the expression for average SNR per bit of BPSK.", topic:"BPSK Error Probability", marks:7, years:["Apr 2025"]},
+  {m:3, q:"How does the cyclic prefix mitigate inter-symbol interference (ISI) in frequency-selective fading channels?", topic:"Cyclic Prefix", marks:7, years:["Sep 2025"]},
+  {m:3, q:"Derive an equation to calculate the average error probability of a BPSK based signalling in a flat fading channel.", topic:"BPSK Error Probability", marks:7, years:["Sep 2025"]},
+  {m:3, q:"Explain the different interferences in OFDM systems. How does it affect data transmission and what techniques are used to mitigate it?", topic:"OFDM Interferences", marks:7, years:["Sep 2025"]},
+  {m:3, q:"For an OFDM system with a cyclic prefix length of 2 µs and a maximum channel delay spread of 15 µs, determine the maximum subcarrier spacing to avoid ISI.", topic:"OFDM Subcarrier Spacing", marks:7, years:["Sep 2025"]},
+
+  {m:4, q:"Define Outage Probability (Pout) of a wireless channel.", topic:"Outage Probability", marks:3, years:["Jun 2023"]},
+  {m:4, q:"Compare and contrast linear equalizer over non-linear equalizer.", topic:"Equalization", marks:3, years:["Jun 2023","Oct 2023","May 2024","Apr 2025"]},
+  {m:4, q:"Differentiate between microdiversity and macrodiversity.", topic:"Diversity", marks:3, years:["Oct 2023"]},
+  {m:4, q:"What are the different types of Diversity in wireless communication?", topic:"Diversity", marks:3, years:["May 2024"]},
+  {m:4, q:"Describe the selection combining technique used in diversity receivers.", topic:"Selection Combining", marks:3, years:["Aug 2024"]},
+  {m:4, q:"Define equalization in the context of digital communication systems. Differentiate between linear and nonlinear equalization techniques.", topic:"Equalization", marks:3, years:["Aug 2024"]},
+  {m:4, q:"Compare linear and non-linear equalizer.", topic:"Equalization", marks:3, years:["Apr 2025"]},
+  {m:4, q:"Define Outage Probability of wireless channel.", topic:"Outage Probability", marks:3, years:["Apr 2025"]},
+  {m:4, q:"List the different types of equalization techniques and explain?", topic:"Equalization", marks:3, years:["Sep 2025"]},
+  {m:4, q:"Describe the role of power control in CDMA systems.", topic:"CDMA / Power Control", marks:3, years:["Sep 2025"]},
+
+  {m:4, q:"Derive the expression for the impulse response Heq(z), of a Minimum Mean Square Error (MMSE) equaliser.", topic:"MMSE Equalizer", marks:7, years:["Jun 2023"]},
+  {m:4, q:"Compare Frequency Division Multiple Access (FDMA) and Time Division Multiple Access (TDMA) techniques.", topic:"FDMA vs TDMA", marks:7, years:["Jun 2023","May 2024"]},
+  {m:4, q:"Design a three tap zero forcing equaliser with following parameters P(0)=1, P(-1)=0.3, P(-2)=-0.05, P(1)=0.2, P(2)=-0.06.", topic:"Zero Forcing Equalizer", marks:7, years:["Jun 2023"]},
+  {m:4, q:"Describe the principle of Selection Combining (SC) diversity technique.", topic:"Selection Combining", marks:7, years:["Jun 2023","May 2024"]},
+  {m:4, q:"Describe the working principle of a Zero Forcing Equaliser with the help of a neat diagram.", topic:"Zero Forcing Equalizer", marks:7, years:["Oct 2023","Apr 2025"]},
+  {m:4, q:"Derive the expression for received SNR of transmitter diversity with 2×2 Alamouti scheme.", topic:"Alamouti / MIMO", marks:7, years:["Oct 2023","Apr 2025"]},
+  {m:4, q:"Describe the steps to compute tap weights iteratively in LMS algorithm.", topic:"LMS Algorithm", marks:7, years:["Oct 2023"]},
+  {m:4, q:"Compare and contrast any three types of multiple access methods adopted in wireless communication system.", topic:"Multiple Access", marks:7, years:["Oct 2023"]},
+  {m:4, q:"With neat figure explain the operation of a ZF equaliser.", topic:"Zero Forcing Equalizer", marks:7, years:["May 2024"]},
+  {m:4, q:"Compare the features of TDMA, FDMA and CDMA.", topic:"Multiple Access", marks:7, years:["May 2024"]},
+  {m:4, q:"List the advantages of Adaptive Equalization.", topic:"Adaptive Equalization", marks:5, years:["May 2024"]},
+  {m:4, q:"Describe Alamouti scheme for 2×2 Multiple Input Multiple Output (MIMO) systems.", topic:"Alamouti / MIMO", marks:7, years:["Aug 2024"]},
+  {m:4, q:"Compare and contrast the various multiple access methods, including FDMA, TDMA, CDMA, and OFDMA.", topic:"Multiple Access", marks:7, years:["Aug 2024"]},
+  {m:4, q:"What is the role of the Least Mean Squares (LMS) algorithm in adaptive equalization?", topic:"LMS Algorithm", marks:7, years:["Aug 2024"]},
+  {m:4, q:"Outline the differences between uplink and downlink transmission in multiuser systems and the challenges associated with them.", topic:"Uplink / Downlink", marks:7, years:["Aug 2024"]},
+  {m:4, q:"Explain with block diagram Adaptive equalizer.", topic:"Adaptive Equalization", marks:7, years:["Apr 2025"]},
+  {m:4, q:"With necessary equation and diagram TDMA, FDMA and CDMA.", topic:"Multiple Access", marks:7, years:["Apr 2025"]},
+  {m:4, q:"Derive expression for received SNR of transmitter diversity with 2×2 Alamouti scheme.", topic:"Alamouti / MIMO", marks:7, years:["Apr 2025"]},
+  {m:4, q:"Discuss the significance of code division in CDMA systems. How does it allow multiple users to share the same frequency spectrum?", topic:"CDMA / Power Control", marks:7, years:["Sep 2025"]},
+  {m:4, q:"In an FDMA system, the frequency band is divided into 10 sub bands, each supporting a data rate of 2 Mbps. Design a system for 20 users. What access technique is suitable? Determine the data rate for each user.", topic:"FDMA / Multiple Access", marks:7, years:["Sep 2025"]},
+  {m:4, q:"How can MIMO be used to improve the performance of wireless communication systems?", topic:"Alamouti / MIMO", marks:7, years:["Sep 2025"]},
+  {m:4, q:"In a multicarrier system with 128 subcarriers, each having a bandwidth of 20 kHz and spaced 20 kHz apart, determine the overall bandwidth used by the system.", topic:"Multicarrier Bandwidth", marks:7, years:["Sep 2025"]},
+
+  {m:5, q:"What do you mean by virtual height of an ionospheric layer?", topic:"Ionospheric Layers", marks:3, years:["Jun 2023"]},
+  {m:5, q:"Which mode of propagation is used by radio waves of frequency above 300MHz? Explain.", topic:"Radio Wave Propagation", marks:3, years:["Jun 2023","Apr 2025"]},
+  {m:5, q:"Deduce the expression for critical frequency of an ionised region in terms of its maximum ionization density.", topic:"Critical Frequency", marks:3, years:["Oct 2023"]},
+  {m:5, q:"Explain the mechanism of wave bending in ionosphere with suitable diagram.", topic:"Ionospheric Propagation", marks:3, years:["Oct 2023","Apr 2025"]},
+  {m:5, q:"How does the spherical nature of the earth affect ground wave propagation?", topic:"Ground Wave Propagation", marks:3, years:["May 2024"]},
+  {m:5, q:"Two aircrafts are flying at altitudes of 3 Km and 5 Km respectively. What is the maximum possible distance along the surface of the earth over which they can have effective point to point communication? (Use effective radius of earth with k=4/3)", topic:"LOS Distance", marks:3, years:["May 2024"]},
+  {m:5, q:"What are the advantages and limitations of ground wave propagation for long-distance communication?", topic:"Ground Wave Propagation", marks:3, years:["Aug 2024"]},
+  {m:5, q:"Define critical frequency and maximum usable frequency and establish the relation between them.", topic:"Critical Frequency / MUF", marks:3, years:["Aug 2024"]},
+  {m:5, q:"Which mode of propagation is used by radio waves of frequency above 300MHz? Explain. [Apr 2025 version]", topic:"Radio Wave Propagation", marks:3, years:["Apr 2025"]},
+  {m:5, q:"Differentiate between ionospheric and space wave propagation.", topic:"Radio Wave Propagation", marks:3, years:["Sep 2025"]},
+  {m:5, q:"Explain the propagation methods of radio waves around the Earth's surface?", topic:"Radio Wave Propagation", marks:3, years:["Sep 2025"]},
+
+  {m:5, q:"Derive an expression for the LOS distance in km when the antenna heights above ground are ht and hr respectively for the transmitter and receiver antennas.", topic:"LOS Distance", marks:7, years:["Jun 2023","Apr 2025"]},
+  {m:5, q:"Analyze the effect of earth's magnetic field on radio wave propagation.", topic:"Earth Magnetic Field Effect", marks:7, years:["Jun 2023","Aug 2024","Apr 2025"]},
+  {m:5, q:"A receiving antenna is located 60km from the transmitting antenna. The Height of the transmitting antenna is 100 meters. What is the required height of the receiving antenna. Consider effective radius of earth.", topic:"LOS Distance Calculation", marks:7, years:["Jun 2023"]},
+  {m:5, q:"Derive the relation between Critical Frequency, Skip Distance and Maximum Usable Frequency.", topic:"Critical Frequency / MUF / Skip Distance", marks:7, years:["Jun 2023"]},
+  {m:5, q:"List out the features of the various modes of radio wave propagation.", topic:"Radio Wave Propagation", marks:8, years:["Oct 2023"]},
+  {m:5, q:"What is the critical frequency for reflection at vertical incidence if the maximum value of electron density is 1.24×10^8 electrons/cc?", topic:"Critical Frequency", marks:6, years:["Oct 2023"]},
+  {m:5, q:"A television transmitter antenna mounted at a height of 200 meters and the receiving antenna has a height of 20 meters. What is the maximum spacing between the transmitter and receiver through tropospheric propagation? Also compute the radio horizon.", topic:"LOS Distance Calculation", marks:7, years:["Oct 2023"]},
+  {m:5, q:"Derive expression for critical frequency, maximum usable frequency and skip distance (assume flat earth's surface) for skywave propagation.", topic:"Critical Frequency / MUF / Skip Distance", marks:7, years:["Oct 2023","Apr 2025"]},
+  {m:5, q:"Define MUF. Derive an expression for MUF in terms of critical frequency, height of the ionospheric region at the point of reflection and skip distance.", topic:"Critical Frequency / MUF", marks:8, years:["May 2024"]},
+  {m:5, q:"The critical frequencies for F1 and F2 layers are observed as 5 MHz and 9 MHz respectively. Find the maximum electronic concentration of these two layers.", topic:"Ionospheric Layers", marks:6, years:["May 2024"]},
+  {m:5, q:"Deduce the expression for critical frequency of an ionized region in terms of its maximum ionization density. [Part B version]", topic:"Critical Frequency", marks:8, years:["May 2024"]},
+  {m:5, q:"Calculate the skip distance for flat earth with MUF of 10 MHz. The wave is reflected from a height of 300km where the maximum value of refractive index is 0.9 and critical frequency is 5 MHz.", topic:"Skip Distance", marks:6, years:["May 2024"]},
+  {m:5, q:"Derive the expression for the refractive index of ionosphere.", topic:"Ionospheric Propagation", marks:9, years:["Aug 2024"]},
+  {m:5, q:"Determine the maximum ionic density and critical frequency of an ionospheric layer with refractive index 0.92 and a frequency of 10MHz.", topic:"Ionospheric Layers", marks:5, years:["Aug 2024"]},
+  {m:5, q:"A receiving antenna is located 65 km from the transmitting antenna. The Height of the transmitting antenna is 100 meters. What is the required height of the receiving antenna. Consider effective radius of earth.", topic:"LOS Distance Calculation", marks:7, years:["Aug 2024"]},
+  {m:5, q:"Derive the expression for critical frequency and MUF and skip distance.", topic:"Critical Frequency / MUF / Skip Distance", marks:8, years:["Apr 2025"]},
+  {m:5, q:"When the maximum electron density of the ionosphere layer corresponds to refractive index of 0.92 at the frequency of 10MHz, find the range if the frequency is MUF itself. The height of the ray reflection point on the ionospheric layer is 400km. Assume flat earth.", topic:"Skip Distance", marks:6, years:["Apr 2025"]},
+  {m:5, q:"Derive LOS distance between transmitter and receiver antenna.", topic:"LOS Distance", marks:6, years:["Apr 2025"]},
+  {m:5, q:"Effect of earth magnetic field on radio wave propagation.", topic:"Earth Magnetic Field Effect", marks:8, years:["Apr 2025"]},
+  {m:5, q:"Differentiate between tropospheric waves and ionospheric waves?", topic:"Radio Wave Propagation", marks:7, years:["Sep 2025"]},
+  {m:5, q:"If a radio signal of 5 MHz frequency is transmitted towards the ionosphere at an angle of 60° with the ground. It takes approximately 2 milliseconds for a round trip after reflecting from the D layer; calculate the distance from the source at which the signal is first incident on the ground.", topic:"Skip Distance", marks:7, years:["Sep 2025"]},
+  {m:5, q:"What are the different modes by which radio waves propagate around the earth?", topic:"Radio Wave Propagation", marks:7, years:["Sep 2025"]},
+  {m:5, q:"Given the critical frequency for the D layer of the ionosphere is 6 MHz, calculate the maximum usable frequency for a radio signal transmitted at an angle of incidence of 30 degrees.", topic:"Critical Frequency / MUF", marks:7, years:["Sep 2025"]},
+];
+
+const Q = RAW.map((r, index) => ({
+  id: index + 1,
+  mod: r.m,
+  topic: r.topic,
+  q: r.q,
+  marks: r.marks,
+  rep: r.years.length,
+  years: r.years.join(", ")
+}));
+
+function pri(q){
+  if(q.rep >= 3) return 'must';
+  if(q.rep === 2 && q.marks >= 7) return 'must';
+  if(q.rep === 2 && q.marks === 3) return 'high';
+  if(q.rep === 1 && q.marks >= 7) return 'high';
+  return 'medium';
+}
+
+const done = new Set();
+const pord = {must:0, high:1, medium:2};
+const plabel = {must:'Must study', high:'High priority', medium:'Medium'};
+const pbc = {must:'bm', high:'bh', medium:'bme'};
+const pbarcl = {must:'pm', high:'ph', medium:'pme'};
+const mnames = {
+  1: 'Mod 1 — Cellular',
+  2: 'Mod 2 — Channel',
+  3: 'Mod 3 — OFDM',
+  4: 'Mod 4 — MA',
+  5: 'Mod 5 — Prop.'
+};
+
+function render(){
+  const fp = document.getElementById('fp').value;
+  const fm = document.getElementById('fm').value;
+  const fmk = document.getElementById('fmk').value;
+  const fd = document.getElementById('fd').value;
+
+  let qs = Q.map(q => ({...q, priority: pri(q)}));
+
+  const c = {must:0, high:0, medium:0};
+  qs.forEach(q => c[q.priority]++);
+  document.getElementById('sm').textContent = c.must;
+  document.getElementById('sh').textContent = c.high;
+  document.getElementById('sme').textContent = c.medium;
+  document.getElementById('stot').textContent = Q.length;
+
+  const dn = done.size;
+  document.getElementById('ptxt').textContent = dn + ' of ' + Q.length + ' done';
+  document.getElementById('ppct').textContent = Math.round(dn / Q.length * 100) + '%';
+  document.getElementById('pbar').style.width = Math.round(dn / Q.length * 100) + '%';
+
+  qs.sort((a,b) => pord[a.priority] - pord[b.priority] || b.rep - a.rep || b.marks - a.marks);
+
+  if(fp !== 'all') qs = qs.filter(q => q.priority === fp);
+  if(fm !== 'all') qs = qs.filter(q => q.mod === parseInt(fm));
+  if(fmk !== 'all') qs = qs.filter(q => fmk === '3' ? q.marks === 3 : q.marks >= 6);
+  if(fd === 'pending') qs = qs.filter(q => !done.has(q.id));
+  if(fd === 'done') qs = qs.filter(q => done.has(q.id));
+
+  let html = '';
+  let lastP = null;
+  qs.forEach(q => {
+    if(q.priority !== lastP){
+      html += `<div class="sec">${plabel[q.priority]}</div>`;
+      lastP = q.priority;
+    }
+    const d = done.has(q.id);
+    const rb = q.rep >= 2 ? `<span class="badge brep">repeated ×${q.rep}</span>` : '';
+    html += `<div class="qc ${d ? 'done' : ''}" onclick="tog(${q.id})">
+      <div class="chk ${d ? 'on' : ''}"><div class="cm"></div></div>
+      <div class="pbar ${pbarcl[q.priority]}"></div>
+      <div class="qbody">
+        <div class="meta">
+          <span class="badge ${pbc[q.priority]}">${plabel[q.priority]}</span>
+          <span class="badge bmod">${mnames[q.mod]} • ${q.topic}</span>
+          <span class="badge bmk">${q.marks} marks</span>
+          ${rb}
+        </div>
+        <p class="qt">${q.q}</p>
+        <p class="qy">Asked in: ${q.years}</p>
+      </div>
+    </div>`;
+  });
+
+  if(!qs.length) html = '<div class="empty">No questions match the current filters.</div>';
+  document.getElementById('ql').innerHTML = html;
+}
+
+function tog(id){
+  done.has(id) ? done.delete(id) : done.add(id);
+  render();
+}
+
+// Initialize
+document.getElementById('subtxt').innerHTML = `Priority study planner &bull; ${Q.length} questions from 6 papers (2023–2025) &bull; Click any question to mark as done`;
+render();
+</script>
+</body>
+</html>
