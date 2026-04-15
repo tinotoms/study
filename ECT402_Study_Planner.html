@@ -43,6 +43,30 @@ select{font-size:13px;padding:6px 10px;border-radius:8px;border:1px solid #ccc;b
 .cm{width:7px;height:4px;border-left:2px solid white;border-bottom:2px solid white;transform:rotate(-45deg) translateY(-1px);display:none}
 .chk.on .cm{display:block}
 .empty{text-align:center;padding:2rem;color:#888;font-size:13px}
+/* Secret Button Styling */
+.secret-btn {
+  background: #E02424;
+  color: white;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  margin-left: 10px;
+  box-shadow: 0 3px 8px rgba(224, 36, 36, 0.35);
+  transition: all 0.2s ease;
+}
+
+.secret-btn:hover {
+  background: #C81E1E;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(224, 36, 36, 0.45);
+}
+
+.secret-btn:active {
+  transform: scale(0.96);
+}
 @media(max-width:600px){.stats{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
@@ -80,6 +104,10 @@ select{font-size:13px;padding:6px 10px;border-radius:8px;border:1px solid #ccc;b
     <option value="pending">Pending only</option>
     <option value="done">Done only</option>
   </select>
+  <!-- Secret Button -->
+  <button class="secret-btn" onclick="window.location.href='secret-strategy.html'">
+    🔥 Secret!
+  </button>
 </div>
 
 <div class="stats">
